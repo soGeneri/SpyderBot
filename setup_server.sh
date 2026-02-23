@@ -46,7 +46,7 @@ apt-get install -y \
     python3-pyqt5 \
     i2c-tools \
     libqt5gui5 \
-    libatlas-base-dev \
+    libopenblas-dev \
     || die "apt-get install failed"
 ok "System packages installed"
 
