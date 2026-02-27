@@ -2,7 +2,6 @@
 import time
 import math
 import smbus
-import copy
 from IMU import *
 from PID import *
 import threading
@@ -32,6 +31,19 @@ class Control:
         self.calibration_angle=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
         self.angle=[[90,0,0],[90,0,0],[90,0,0],[90,0,0],[90,0,0],[90,0,0]]
         self.order=['','','','','','']
+        # Pre-computed sin/cos for each leg's mounting angle (deg): 54,0,-54,-126,180,126
+        _angles = [54, 0, -54, -126, 180, 126]
+        self._leg_cos = [math.cos(a * math.pi / 180) for a in _angles]
+        self._leg_sin = [math.sin(a * math.pi / 180) for a in _angles]
+        # Hip x-offsets per leg (mm from body centre to hip pivot)
+        self._leg_offset_x = [-94, -85, -94, -94, -85, -94]
+        # Constant foot positions used by postureBalance (3×6, columns = legs)
+        self._footpoint_struc = np.mat([[137.1,  189.4, 0],
+                                        [225,     0,    0],
+                                        [137.1, -189.4, 0],
+                                        [-137.1,-189.4, 0],
+                                        [-225,    0,    0],
+                                        [-137.1, 189.4, 0]]).T
         self.calibration()
         self.setLegAngle()
         self.Thread_conditiona=threading.Thread(target=self.condition)
@@ -243,30 +255,12 @@ class Control:
             self.setLegAngle()
         
     def coordinateTransformation(self,point):
-        #leg1
-        self.leg_point[0][0]=point[0][0]*math.cos(54/180*math.pi)+point[0][1]*math.sin(54/180*math.pi)-94
-        self.leg_point[0][1]=-point[0][0]*math.sin(54/180*math.pi)+point[0][1]*math.cos(54/180*math.pi)
-        self.leg_point[0][2]=point[0][2]-14
-        #leg2
-        self.leg_point[1][0]=point[1][0]*math.cos(0/180*math.pi)+point[1][1]*math.sin(0/180*math.pi)-85
-        self.leg_point[1][1]=-point[1][0]*math.sin(0/180*math.pi)+point[1][1]*math.cos(0/180*math.pi)
-        self.leg_point[1][2]=point[1][2]-14
-        #leg3
-        self.leg_point[2][0]=point[2][0]*math.cos(-54/180*math.pi)+point[2][1]*math.sin(-54/180*math.pi)-94
-        self.leg_point[2][1]=-point[2][0]*math.sin(-54/180*math.pi)+point[2][1]*math.cos(-54/180*math.pi)
-        self.leg_point[2][2]=point[2][2]-14
-        #leg4
-        self.leg_point[3][0]=point[3][0]*math.cos(-126/180*math.pi)+point[3][1]*math.sin(-126/180*math.pi)-94
-        self.leg_point[3][1]=-point[3][0]*math.sin(-126/180*math.pi)+point[3][1]*math.cos(-126/180*math.pi)
-        self.leg_point[3][2]=point[3][2]-14
-        #leg5
-        self.leg_point[4][0]=point[4][0]*math.cos(180/180*math.pi)+point[4][1]*math.sin(180/180*math.pi)-85
-        self.leg_point[4][1]=-point[4][0]*math.sin(180/180*math.pi)+point[4][1]*math.cos(180/180*math.pi)
-        self.leg_point[4][2]=point[4][2]-14
-        #leg6
-        self.leg_point[5][0]=point[5][0]*math.cos(126/180*math.pi)+point[5][1]*math.sin(126/180*math.pi)-94
-        self.leg_point[5][1]=-point[5][0]*math.sin(126/180*math.pi)+point[5][1]*math.cos(126/180*math.pi)
-        self.leg_point[5][2]=point[5][2]-14
+        for i in range(6):
+            c = self._leg_cos[i]
+            s = self._leg_sin[i]
+            self.leg_point[i][0] =  point[i][0]*c + point[i][1]*s + self._leg_offset_x[i]
+            self.leg_point[i][1] = -point[i][0]*s + point[i][1]*c
+            self.leg_point[i][2] =  point[i][2] - 14
     
     def restriction(self,var,v_min,v_max):
         if var < v_min:
@@ -280,7 +274,7 @@ class Control:
         return (toHigh-toLow)*(value-fromLow) / (fromHigh-fromLow) + toLow
     
     def posittion(self,x,y,z):
-        point=copy.deepcopy(self.body_point)
+        point=[row[:] for row in self.body_point]
         for i in range(6):
             point[i][0]=self.body_point[i][0]-x
             point[i][1]=self.body_point[i][1]-y
@@ -292,8 +286,7 @@ class Control:
             
     def postureBalance(self,r, p, y):
         pos = np.mat([0.0, 0.0, self.height]).T
-        rpy = np.array([r, p, y]) * math.pi / 180
-        R, P, Y = rpy[0], rpy[1], rpy[2]
+        R, P, Y = r * math.pi / 180, p * math.pi / 180, y * math.pi / 180
         rotx = np.mat([[1, 0, 0],
                        [0, math.cos(P), -math.sin(P)],
                        [0, math.sin(P), math.cos(P)]])
@@ -303,31 +296,10 @@ class Control:
         rotz = np.mat([[math.cos(Y), -math.sin(Y), 0],
                        [math.sin(Y), math.cos(Y), 0],
                        [0, 0, 1]])
-                       
         rot_mat = rotx * roty * rotz
-        
-        body_struc = np.mat([[55, 76, 0],
-                             [85, 0, 0],
-                             [55, -76, 0],
-                             [-55, -76, 0],
-                             [-85, 0, 0],
-                             [-55, 76, 0]]).T
-                         
-        footpoint_struc = np.mat([[137.1 ,189.4 ,   0],
-                                  [225, 0,   0],
-                                  [137.1 ,-189.4 ,   0],
-                                  [-137.1 ,-189.4 ,   0],
-                                  [-225, 0,   0],
-                                  [-137.1 ,189.4 ,   0]]).T
-                                  
-        AB = np.mat(np.zeros((3, 6)))
-        ab=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
-        for i in range(6):
-            AB[:, i] = pos +rot_mat * footpoint_struc[:, i] 
-            ab[i][0]=AB[0,i]
-            ab[i][1]=AB[1,i]
-            ab[i][2]=AB[2,i]
-        return (ab)  
+        # Apply rotation to all 6 foot positions at once (3×6 matrix op)
+        AB = pos + rot_mat * self._footpoint_struc
+        return [[AB[0,i], AB[1,i], AB[2,i]] for i in range(6)]
          
     def imu6050(self):
         old_r=0
@@ -363,9 +335,9 @@ class Control:
         angle=int(data[5])
         z=Z/F
         delay=0.01
-        point=copy.deepcopy(self.body_point)
+        point=[row[:] for row in self.body_point]
         #if y < 0:
-        #   angle=-angle 
+        #   angle=-angle
         if angle!=0:
             x=0
         xy=[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
@@ -376,37 +348,44 @@ class Control:
             self.coordinateTransformation(point)
             self.setLegAngle()
         elif gait=="1" :
+            # Pre-compute phase boundaries once instead of re-dividing every frame
+            F_8  = F / 8
+            F_4  = F / 4
+            F3_8 = 3 * F / 8
+            F5_8 = 5 * F / 8
+            F3_4 = 3 * F / 4
+            F7_8 = 7 * F / 8
             for j in range (F):
                 for i in range(3):
-                    if j< (F/8):
+                    if j< F_8:
                         point[2*i][0]=point[2*i][0]-4*xy[2*i][0]
                         point[2*i][1]=point[2*i][1]-4*xy[2*i][1]
                         point[2*i+1][0]=point[2*i+1][0]+8*xy[2*i+1][0]
                         point[2*i+1][1]=point[2*i+1][1]+8*xy[2*i+1][1]
                         point[2*i+1][2]=Z+self.height
-                    elif j< (F/4):
+                    elif j< F_4:
                         point[2*i][0]=point[2*i][0]-4*xy[2*i][0]
                         point[2*i][1]=point[2*i][1]-4*xy[2*i][1]
                         point[2*i+1][2]=point[2*i+1][2]-z*8
-                    elif j< (3*F/8):
+                    elif j< F3_8:
                         point[2*i][2]=point[2*i][2]+z*8
                         point[2*i+1][0]=point[2*i+1][0]-4*xy[2*i+1][0]
                         point[2*i+1][1]=point[2*i+1][1]-4*xy[2*i+1][1]
-                    elif j< (5*F/8):
+                    elif j< F5_8:
                         point[2*i][0]=point[2*i][0]+8*xy[2*i][0]
                         point[2*i][1]=point[2*i][1]+8*xy[2*i][1]
-                    
+
                         point[2*i+1][0]=point[2*i+1][0]-4*xy[2*i+1][0]
                         point[2*i+1][1]=point[2*i+1][1]-4*xy[2*i+1][1]
-                    elif j< (3*F/4):
+                    elif j< F3_4:
                         point[2*i][2]=point[2*i][2]-z*8
                         point[2*i+1][0]=point[2*i+1][0]-4*xy[2*i+1][0]
                         point[2*i+1][1]=point[2*i+1][1]-4*xy[2*i+1][1]
-                    elif j< (7*F/8):
+                    elif j< F7_8:
                         point[2*i][0]=point[2*i][0]-4*xy[2*i][0]
                         point[2*i][1]=point[2*i][1]-4*xy[2*i][1]
                         point[2*i+1][2]=point[2*i+1][2]+z*8
-                    elif j< (F):
+                    else:
                         point[2*i][0]=point[2*i][0]-4*xy[2*i][0]
                         point[2*i][1]=point[2*i][1]-4*xy[2*i][1]
                         point[2*i+1][0]=point[2*i+1][0]+8*xy[2*i+1][0]

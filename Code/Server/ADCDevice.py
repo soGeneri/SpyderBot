@@ -40,7 +40,7 @@ class PCF8591(ADCDevice):
         return value
     
     def analogWrite(self,value): # write DAC value
-        self.bus.write_byte_data(address,cmd,value) 
+        self.bus.write_byte_data(self.address, self.cmd, value)
 
 class ADS7830(ADCDevice):
     def __init__(self):

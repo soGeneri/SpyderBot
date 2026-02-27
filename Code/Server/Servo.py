@@ -5,6 +5,12 @@ import math
 import smbus
 def mapNum(value,fromLow,fromHigh,toLow,toHigh):
     return (toHigh-toLow)*(value-fromLow) / (fromHigh-fromLow) + toLow
+
+# Pre-computed constants: angle(0–180) → pulse(500–2500 µs) → duty(0–4095)
+# duty = angle * (4095*2000)/(20000*180) + (4095*500)/20000
+_SERVO_SCALE  = 4095.0 * 2000.0 / (20000.0 * 180.0)  # ≈ 2.275 counts/degree
+_SERVO_OFFSET = 4095.0 * 500.0  / 20000.0             # ≈ 102.375 counts
+
 class Servo:
     def __init__(self):
         self.pwm_40 = PCA9685(0x40, debug=True)
@@ -16,14 +22,12 @@ class Servo:
         time.sleep(0.01)             
 
     #Convert the input angle to the value of pca9685
-    def setServoAngle(self,channel, angle):  
+    def setServoAngle(self,channel, angle):
+        date = int(_SERVO_SCALE * angle + _SERVO_OFFSET)  # angle→duty in one step
         if channel < 16:
-            date = mapNum(mapNum(angle,0,180,500,2500),0,20000,0,4095) # 0-180 map to 500-2500us ,then map to duty 0-4095
-            self.pwm_41.setPWM(channel, 0, int(date))
+            self.pwm_41.setPWM(channel, 0, date)
         elif channel >= 16 and channel < 32:
-            channel-=16
-            date = mapNum(mapNum(angle,0,180,500,2500),0,20000,0,4095) # 
-            self.pwm_40.setPWM(channel, 0, int(date))
+            self.pwm_40.setPWM(channel - 16, 0, date)
         #time.sleep(0.0001)
     def relax(self):
         for i in range(8):
