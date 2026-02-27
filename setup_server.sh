@@ -71,11 +71,8 @@ fi
 modprobe i2c-dev 2>/dev/null && ok "i2c-dev module loaded" || warn "Could not load i2c-dev — will be active after reboot"
 
 # ── 5. pip packages ────────────────────────────────────────────────────────────
-info "Upgrading pip..."
-python3 -m pip install --upgrade pip
-
 info "Installing pip packages..."
-pip3 install \
+pip3 install --break-system-packages \
     mpu6050-raspberrypi \
     picamera2 \
     smbus2 \
@@ -93,7 +90,7 @@ if [[ -d "$WS281X_DIR" ]]; then
 else
     warn "Bundled rpi-ws281x library not found at $WS281X_DIR"
     info "Attempting pip install of rpi-ws281x fallback..."
-    pip3 install rpi-ws281x || warn "rpi-ws281x pip install also failed — LEDs may not work"
+    pip3 install rpi-ws281x --break-system-packages || warn "rpi-ws281x pip install also failed — LEDs may not work"
 fi
 
 # ── 7. Verify I2C devices (informational) ─────────────────────────────────────

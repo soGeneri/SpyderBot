@@ -291,36 +291,36 @@ class Control:
         self.setLegAngle()
             
     def postureBalance(self,r, p, y):
-        pos = np.mat([0.0, 0.0, self.height]).T
+        pos = np.asmatrix([0.0, 0.0, self.height]).T
         rpy = np.array([r, p, y]) * math.pi / 180
         R, P, Y = rpy[0], rpy[1], rpy[2]
-        rotx = np.mat([[1, 0, 0],
+        rotx = np.asmatrix([[1, 0, 0],
                        [0, math.cos(P), -math.sin(P)],
                        [0, math.sin(P), math.cos(P)]])
-        roty = np.mat([[math.cos(R), 0, -math.sin(R)],
+        roty = np.asmatrix([[math.cos(R), 0, -math.sin(R)],
                        [0, 1, 0],
                        [math.sin(R), 0, math.cos(R)]])
-        rotz = np.mat([[math.cos(Y), -math.sin(Y), 0],
+        rotz = np.asmatrix([[math.cos(Y), -math.sin(Y), 0],
                        [math.sin(Y), math.cos(Y), 0],
                        [0, 0, 1]])
-                       
+
         rot_mat = rotx * roty * rotz
-        
-        body_struc = np.mat([[55, 76, 0],
+
+        body_struc = np.asmatrix([[55, 76, 0],
                              [85, 0, 0],
                              [55, -76, 0],
                              [-55, -76, 0],
                              [-85, 0, 0],
                              [-55, 76, 0]]).T
-                         
-        footpoint_struc = np.mat([[137.1 ,189.4 ,   0],
+
+        footpoint_struc = np.asmatrix([[137.1 ,189.4 ,   0],
                                   [225, 0,   0],
                                   [137.1 ,-189.4 ,   0],
                                   [-137.1 ,-189.4 ,   0],
                                   [-225, 0,   0],
                                   [-137.1 ,189.4 ,   0]]).T
-                                  
-        AB = np.mat(np.zeros((3, 6)))
+
+        AB = np.asmatrix(np.zeros((3, 6)))
         ab=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
         for i in range(6):
             AB[:, i] = pos +rot_mat * footpoint_struc[:, i] 
