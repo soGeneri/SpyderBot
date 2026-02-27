@@ -263,10 +263,10 @@ class Control:
         rotx = np.mat([[1, 0, 0],
                        [0, math.cos(P), -math.sin(P)],
                        [0, math.sin(P), math.cos(P)]])
-        roty = np.mat([[math.cos(R), 0, -math.sin(R)],
+        roty = np.asmatrix([[math.cos(R), 0, -math.sin(R)],
                        [0, 1, 0],
                        [math.sin(R), 0, math.cos(R)]])
-        rotz = np.mat([[math.cos(Y), -math.sin(Y), 0],
+        rotz = np.asmatrix([[math.cos(Y), -math.sin(Y), 0],
                        [math.sin(Y), math.cos(Y), 0],
                        [0, 0, 1]])
         rot_mat = rotx * roty * rotz
