@@ -122,35 +122,8 @@ class Control:
                 self.angle[i+3][1]=self.restriction(90+self.angle[i+3][1]+self.calibration_angle[i+3][1],0,180)
                 self.angle[i+3][2]=self.restriction(180-(self.angle[i+3][2]+self.calibration_angle[i+3][2]),0,180)
              
-            #leg1
-            self.servo.setServoAngle(15,self.angle[0][0])
-            self.servo.setServoAngle(14,self.angle[0][1])
-            self.servo.setServoAngle(13,self.angle[0][2])
-            
-            #leg2
-            self.servo.setServoAngle(12,self.angle[1][0])
-            self.servo.setServoAngle(11,self.angle[1][1])
-            self.servo.setServoAngle(10,self.angle[1][2])
-            
-            #leg3
-            self.servo.setServoAngle(9,self.angle[2][0])
-            self.servo.setServoAngle(8,self.angle[2][1])
-            self.servo.setServoAngle(31,self.angle[2][2])
-            
-            #leg6
-            self.servo.setServoAngle(16,self.angle[5][0])
-            self.servo.setServoAngle(17,self.angle[5][1])
-            self.servo.setServoAngle(18,self.angle[5][2])
-            
-            #leg5
-            self.servo.setServoAngle(19,self.angle[4][0])
-            self.servo.setServoAngle(20,self.angle[4][1])
-            self.servo.setServoAngle(21,self.angle[4][2])
-            
-            #leg4
-            self.servo.setServoAngle(22,self.angle[3][0])
-            self.servo.setServoAngle(23,self.angle[3][1])
-            self.servo.setServoAngle(27,self.angle[3][2])
+            # Write all 18 servos in 4 batched I2C block writes instead of 72 individual writes
+            self.servo.setLegServoBatch(self.angle)
         else:
             print("This coordinate point is out of the active range")
     def checkPoint(self):
@@ -314,7 +287,7 @@ class Control:
         while True:
             if self.order[0]!="":
                 break
-            time.sleep(0.02)
+            _t = time.time()
             r,p,y=self.imu.imuUpdate()
             #r=self.restriction(self.pid.PID_compute(r),-15,15)
             #p=self.restriction(self.pid.PID_compute(p),-15,15)
@@ -323,6 +296,8 @@ class Control:
             point=self.postureBalance(r,p,0)
             self.coordinateTransformation(point)
             self.setLegAngle()
+            # Sleep only the remaining time to maintain ~50 Hz update rate
+            time.sleep(max(0.0, 0.02 - (time.time() - _t)))
  
     def run(self,data,Z=40,F=64):#example : data=['CMD_MOVE', '1', '0', '25', '10', '0']
         gait=data[1]
@@ -334,7 +309,7 @@ class Control:
             F=round(self.map(int(data[4]),2,10,171,45))
         angle=int(data[5])
         z=Z/F
-        delay=0.01
+        delay=0.003  # 3 ms — reduced from 10 ms; tune down toward 0 with 400 kHz I2C
         point=[row[:] for row in self.body_point]
         #if y < 0:
         #   angle=-angle

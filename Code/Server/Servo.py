@@ -29,6 +29,46 @@ class Servo:
         elif channel >= 16 and channel < 32:
             self.pwm_40.setPWM(channel - 16, 0, date)
         #time.sleep(0.0001)
+    def setLegServoBatch(self, angle):
+        """Write all 18 leg servo angles in 4 I2C block writes instead of 72 individual writes.
+        angle: 6×3 list indexed [leg][joint] — same layout as Control.angle.
+        Channel mapping mirrors the setLegAngle() servo calls exactly."""
+        def d(a):
+            return int(_SERVO_SCALE * a + _SERVO_OFFSET)
+
+        # PCA9685 @ 0x41 — channels 8-15 (all 8 leg servos on this chip, contiguous)
+        # ch8=leg3 femur, ch9=leg3 coxa, ch10=leg2 tibia, ch11=leg2 femur,
+        # ch12=leg2 coxa, ch13=leg1 tibia, ch14=leg1 femur, ch15=leg1 coxa
+        self.pwm_41.setChannelsPWM(8, [
+            d(angle[2][1]),  # ch8:  leg3 femur
+            d(angle[2][0]),  # ch9:  leg3 coxa
+            d(angle[1][2]),  # ch10: leg2 tibia
+            d(angle[1][1]),  # ch11: leg2 femur
+            d(angle[1][0]),  # ch12: leg2 coxa
+            d(angle[0][2]),  # ch13: leg1 tibia
+            d(angle[0][1]),  # ch14: leg1 femur
+            d(angle[0][0]),  # ch15: leg1 coxa
+        ])
+
+        # PCA9685 @ 0x40 — channels 0-7 (legs 6, 5, 4 coxa+femur, contiguous)
+        # ch0=leg6 coxa, ch1=leg6 femur, ch2=leg6 tibia,
+        # ch3=leg5 coxa, ch4=leg5 femur, ch5=leg5 tibia,
+        # ch6=leg4 coxa, ch7=leg4 femur
+        self.pwm_40.setChannelsPWM(0, [
+            d(angle[5][0]),  # ch0: leg6 coxa
+            d(angle[5][1]),  # ch1: leg6 femur
+            d(angle[5][2]),  # ch2: leg6 tibia
+            d(angle[4][0]),  # ch3: leg5 coxa
+            d(angle[4][1]),  # ch4: leg5 femur
+            d(angle[4][2]),  # ch5: leg5 tibia
+            d(angle[3][0]),  # ch6: leg4 coxa
+            d(angle[3][1]),  # ch7: leg4 femur
+        ])
+
+        # PCA9685 @ 0x40 — non-contiguous channels (individual 4-byte block writes)
+        self.pwm_40.setChannelsPWM(11, [d(angle[3][2])])  # ch11: leg4 tibia  (servo 27)
+        self.pwm_40.setChannelsPWM(15, [d(angle[2][2])])  # ch15: leg3 tibia  (servo 31)
+
     def relax(self):
         for i in range(8):
             self.pwm_41.setPWM(i+8, 4096, 4096)

@@ -63,6 +63,17 @@ class PCA9685:
     self.write(self.__LED0_ON_H+4*channel, on >> 8)
     self.write(self.__LED0_OFF_L+4*channel, off & 0xFF)
     self.write(self.__LED0_OFF_H+4*channel, off >> 8)
+
+  def setChannelsPWM(self, start_channel, duty_list):
+    "Write duty values for consecutive channels in one I2C block write (18x fewer transactions)"
+    reg = self.__LED0_ON_L + 4 * start_channel
+    block = []
+    for duty in duty_list:
+      d = int(duty)
+      block.extend([0x00, 0x00, d & 0xFF, d >> 8])  # ON_L, ON_H, OFF_L, OFF_H
+    # smbus write_i2c_block_data supports up to 32 bytes per call; split if needed
+    for offset in range(0, len(block), 32):
+      self.bus.write_i2c_block_data(self.address, reg + offset, block[offset:offset + 32])
   def setMotorPwm(self,channel,duty):
     self.setPWM(channel,0,duty)
   def setServoPulse(self, channel, pulse):
