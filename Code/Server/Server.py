@@ -32,6 +32,7 @@ class StreamingOutput(io.BufferedIOBase):
 class Server:
     def __init__(self):
         self.tcp_flag=False
+        self.thread_led=None
         self.led=Led()
         self.adc=ADC()
         self.servo=Servo()
@@ -117,27 +118,25 @@ class Server:
         except:
             print ("Client connect failed")
         self.server_socket1.close()
-        
+
+        buf = ''
         while True:
             try:
-                allData=self.connection1.recv(1024).decode('utf-8')
+                chunk = self.connection1.recv(1024).decode('utf-8')
             except:
                 if self.tcp_flag:
                     self.reset_server()
-                    break
-                else:
-                    break
-            if allData=="" and self.tcp_flag:
-                self.reset_server()
                 break
-            else:
-                cmdArray=allData.split('\n')
-                print(cmdArray)
-                if cmdArray[-1] !="":
-                    cmdArray==cmdArray[:-1]
-            for oneCmd in cmdArray:
-                data=oneCmd.split("#")
-                if data==None or data[0]=='':
+            if not chunk:
+                if self.tcp_flag:
+                    self.reset_server()
+                break
+            buf += chunk
+            # Process every complete newline-terminated command in the buffer
+            while '\n' in buf:
+                line, buf = buf.split('\n', 1)
+                data = line.split('#')
+                if not data or data[0] == '':
                     continue
                 elif cmd.CMD_BUZZER in data:
                     self.buzzer.run(data[1])
@@ -145,32 +144,20 @@ class Server:
                     try:
                         batteryVoltage=self.adc.batteryPower()
                         command=cmd.CMD_POWER+"#"+str(batteryVoltage[0])+"#"+str(batteryVoltage[1])+"\n"
-                        #print(command)
                         self.send_data(self.connection1,command)
                         if batteryVoltage[0] < 5.5 or batteryVoltage[1]<6:
-                         for i in range(3):
-                            self.buzzer.run("1")
-                            time.sleep(0.15)
-                            self.buzzer.run("0")
-                            time.sleep(0.1)
+                            for i in range(3):
+                                self.buzzer.run("1")
+                                time.sleep(0.15)
+                                self.buzzer.run("0")
+                                time.sleep(0.1)
                     except:
                         pass
-                elif cmd.CMD_LED in data:
-                    try:
-                        stop_thread(thread_led)
-                    except:
-                        pass
-                    thread_led=threading.Thread(target=self.led.light,args=(data,))
-                    thread_led.start()   
-                elif cmd.CMD_LED_MOD in data:
-                    try:
-                        stop_thread(thread_led)
-                        #print("stop,yes")
-                    except:
-                        #print("stop,no")
-                        pass
-                    thread_led=threading.Thread(target=self.led.light,args=(data,))
-                    thread_led.start()
+                elif cmd.CMD_LED in data or cmd.CMD_LED_MOD in data:
+                    if self.thread_led is not None and self.thread_led.is_alive():
+                        stop_thread(self.thread_led)
+                    self.thread_led = threading.Thread(target=self.led.light, args=(data,), daemon=True)
+                    self.thread_led.start()
                 elif cmd.CMD_SONIC in data:
                     command=cmd.CMD_SONIC+"#"+str(self.sonic.getDistance())+"\n"
                     self.send_data(self.connection1,command)
@@ -184,7 +171,6 @@ class Server:
                         self.servo.setServoAngle(0,x)
                         self.servo.setServoAngle(1,y)
                 elif cmd.CMD_RELAX in data:
-                    #print(data)
                     if self.control.relax_flag==False:
                         self.control.relax(True)
                         self.control.relax_flag=True
@@ -196,14 +182,11 @@ class Server:
                         GPIO.output(self.control.GPIO_4,True)
                     else:
                         GPIO.output(self.control.GPIO_4,False)
-                    
                 else:
                     self.control.order=data
                     self.control.timeout=time.time()
-        try:
-            stop_thread(thread_led)
-        except:
-            pass
+        if self.thread_led is not None and self.thread_led.is_alive():
+            stop_thread(self.thread_led)
         try:
             stop_thread(thread_sonic)
         except:
