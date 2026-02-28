@@ -29,7 +29,7 @@ class PCA9685:
     self.bus = smbus.SMBus(1)
     self.address = address
     self.debug = debug
-    self.write(self.__MODE1, 0x00)
+    self.write(self.__MODE1, 0x20)  # 0x20 = AI (auto-increment) bit set; required for block writes
     
   def write(self, reg, value):
     "Writes an 8-bit value to the specified register/address"
