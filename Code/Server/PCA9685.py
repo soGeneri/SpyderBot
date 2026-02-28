@@ -71,9 +71,11 @@ class PCA9685:
     for duty in duty_list:
       d = int(duty)
       block.extend([0x00, 0x00, d & 0xFF, d >> 8])  # ON_L, ON_H, OFF_L, OFF_H
-    # smbus write_i2c_block_data supports up to 32 bytes per call; split if needed
-    for offset in range(0, len(block), 32):
-      self.bus.write_i2c_block_data(self.address, reg + offset, block[offset:offset + 32])
+    # Limit to 16 bytes per call to stay within the RPi BCM2835 I2C TX FIFO size.
+    # Larger chunks require a mid-transaction FIFO refill which can corrupt the
+    # PWM registers with a partial OFF_L/OFF_H state, causing servo jitter.
+    for offset in range(0, len(block), 16):
+      self.bus.write_i2c_block_data(self.address, reg + offset, block[offset:offset + 16])
   def setMotorPwm(self,channel,duty):
     self.setPWM(channel,0,duty)
   def setServoPulse(self, channel, pulse):

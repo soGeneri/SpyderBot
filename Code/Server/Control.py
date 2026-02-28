@@ -309,7 +309,7 @@ class Control:
             F=round(self.map(int(data[4]),2,10,171,45))
         angle=int(data[5])
         z=Z/F
-        delay=0.003  # 3 ms — reduced from 10 ms; tune down toward 0 with 400 kHz I2C
+        delay=0.008  # 8 ms — keeps ~2 updates per servo PWM cycle (50 Hz = 20 ms period)
         point=[row[:] for row in self.body_point]
         #if y < 0:
         #   angle=-angle
