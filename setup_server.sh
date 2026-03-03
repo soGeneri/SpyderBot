@@ -131,6 +131,21 @@ else
     warn "  import picamera2 — may need manual install (see: sudo apt install python3-picamera2)"
 fi
 
+# ── 9. Install systemd service ─────────────────────────────────────────────────
+SERVICE_TEMPLATE="$SCRIPT_DIR/hexapod.service"
+SERVICE_DEST="/etc/systemd/system/hexapod.service"
+
+if [[ -f "$SERVICE_TEMPLATE" ]]; then
+    info "Installing hexapod systemd service..."
+    sed "s|REPO_PATH|$SCRIPT_DIR|g" "$SERVICE_TEMPLATE" > "$SERVICE_DEST"
+    systemctl daemon-reload
+    systemctl enable hexapod.service
+    ok "Service installed and enabled: $SERVICE_DEST"
+    info "Start now with: sudo systemctl start hexapod.service"
+else
+    warn "hexapod.service template not found at $SERVICE_TEMPLATE — skipping service install"
+fi
+
 # ── Done ───────────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${CYAN}================================================${NC}"
