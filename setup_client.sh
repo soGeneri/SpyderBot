@@ -49,9 +49,9 @@ $PYTHON -m pip install --upgrade pip --quiet
 ok "pip upgraded"
 
 # ── Core pip packages ──────────────────────────────────────────────────────────
-info "Installing PyQt5..."
-$PIP install PyQt5 --quiet || die "PyQt5 install failed"
-ok "PyQt5 installed"
+info "Installing PyQt6..."
+$PIP install PyQt6 --quiet || die "PyQt6 install failed"
+ok "PyQt6 installed"
 
 info "Installing Pillow..."
 $PIP install Pillow --quiet || die "Pillow install failed"
@@ -78,7 +78,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
     info "Linux detected — checking for Qt system libs..."
     if command -v apt-get &>/dev/null; then
         # Best-effort; don't fail the whole script if this needs sudo
-        sudo apt-get install -y python3-pyqt5 libqt5gui5 2>/dev/null \
+        sudo apt-get install -y python3-pyqt6 libqt6gui6 2>/dev/null \
             && ok "Qt system packages installed via apt" \
             || warn "Could not install Qt system packages via apt (try manually if UI fails)"
     fi
@@ -120,7 +120,7 @@ check_import() {
     fi
 }
 
-check_import PyQt5
+check_import PyQt6
 check_import PIL
 check_import cv2
 check_import numpy

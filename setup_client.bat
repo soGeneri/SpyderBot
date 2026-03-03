@@ -66,14 +66,14 @@ if errorlevel 1 (
     echo !GREEN![OK]!NC!  pip upgraded
 )
 
-:: ── PyQt5 ─────────────────────────────────────────────────────────────────────
-echo !CYAN![--]!NC! Installing PyQt5...
-%PYTHON% -m pip install PyQt5 --quiet
+:: ── PyQt6 ─────────────────────────────────────────────────────────────────────
+echo !CYAN![--]!NC! Installing PyQt6...
+%PYTHON% -m pip install PyQt6 --quiet
 if errorlevel 1 (
-    echo !RED![FAIL]!NC! PyQt5 install failed
+    echo !RED![FAIL]!NC! PyQt6 install failed
     set /a IMPORT_ERRORS+=1
 ) else (
-    echo !GREEN![OK]!NC!  PyQt5 installed
+    echo !GREEN![OK]!NC!  PyQt6 installed
 )
 
 :: ── Pillow ────────────────────────────────────────────────────────────────────
@@ -142,7 +142,7 @@ if not defined CURRENT_IP (
 echo.
 echo !CYAN![--]!NC! Verifying Python imports...
 
-call :check_import PyQt5
+call :check_import PyQt6
 call :check_import PIL
 call :check_import cv2
 call :check_import numpy

@@ -5,10 +5,10 @@ from ui_led import Ui_led
 from ui_face import Ui_Face
 from ui_client import Ui_client
 import stylesheet
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
+from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import *
+from PyQt6.QtWidgets import *
+from PyQt6.QtGui import *
 from Client import *
 from Calibration import *
 class MyWindow(QMainWindow,Ui_client):
@@ -108,85 +108,85 @@ class MyWindow(QMainWindow,Ui_client):
 
     # keyboard
     def keyPressEvent(self, event):
-        if (event.key() == Qt.Key_C):
+        if (event.key() == Qt.Key.Key_C):
             print("C")
             self.connect()
-        if (event.key() == Qt.Key_V):
+        if (event.key() == Qt.Key.Key_V):
             try:
                 print("V")
                 self.video()
             except Exception as e:
                 print(e)
 
-        if (event.key() == Qt.Key_R):
+        if (event.key() == Qt.Key.Key_R):
             print("R")
             self.relax()
-        if (event.key() == Qt.Key_L):
+        if (event.key() == Qt.Key.Key_L):
             print("L")
             self.showLedWindow()
-        if (event.key() == Qt.Key_B):
+        if (event.key() == Qt.Key.Key_B):
             print("B")
             self.imu()
-        if (event.key() == Qt.Key_F):
+        if (event.key() == Qt.Key.Key_F):
             print("F")
             self.faceRecognition()
-        if (event.key() == Qt.Key_U):
+        if (event.key() == Qt.Key.Key_U):
             print("U")
             self.sonic()
-        if (event.key() == Qt.Key_I):
+        if (event.key() == Qt.Key.Key_I):
             print("I")
             self.showFaceWindow()
-        if (event.key() == Qt.Key_T):
+        if (event.key() == Qt.Key.Key_T):
             print("T")
             self.showCalibrationWindow()
-        if (event.key() == Qt.Key_Y):
+        if (event.key() == Qt.Key.Key_Y):
             print("Y")
             self.buzzer()
 
         if event.isAutoRepeat():
             pass
         else:
-            if event.key() == Qt.Key_W:
+            if event.key() == Qt.Key.Key_W:
                 self.Key_W = True
                 print("W")
                 self.move_point = [325, 535]
                 self.move()
-            elif event.key() == Qt.Key_S:
+            elif event.key() == Qt.Key.Key_S:
                 self.Key_S = True
                 print("S")
                 self.move_point = [325, 735]
                 self.move()
-            elif event.key() == Qt.Key_A:
+            elif event.key() == Qt.Key.Key_A:
                 self.Key_A = True
                 print("A")
                 self.move_point = [225, 635]
                 self.move()
-            elif event.key() == Qt.Key_D:
+            elif event.key() == Qt.Key.Key_D:
                 self.Key_D = True
                 print("D")
                 self.move_point = [425, 635]
                 self.move()
 
     def keyReleaseEvent(self, event):
-        if (event.key() == Qt.Key_W):
+        if (event.key() == Qt.Key.Key_W):
             if not (event.isAutoRepeat()) and self.Key_W == True:
                 print("release W")
                 self.Key_W = False
                 self.move_point = [325, 635]
                 self.move()
-        elif (event.key() == Qt.Key_A):
+        elif (event.key() == Qt.Key.Key_A):
             if not (event.isAutoRepeat()) and self.Key_A == True:
                 print("release A")
                 self.Key_A = False
                 self.move_point = [325, 635]
                 self.move()
-        elif (event.key() == Qt.Key_S):
+        elif (event.key() == Qt.Key.Key_S):
             if not (event.isAutoRepeat()) and self.Key_S == True:
                 print("release S")
                 self.Key_S = False
                 self.move_point = [325, 635]
                 self.move()
-        elif (event.key() == Qt.Key_D):
+        elif (event.key() == Qt.Key.Key_D):
             if not (event.isAutoRepeat()) and self.Key_D == True:
                 print("release D")
                 self.Key_D = False
@@ -196,18 +196,18 @@ class MyWindow(QMainWindow,Ui_client):
         try:
             qp=QPainter()
             qp.begin(self)
-            qp.setPen(QPen(Qt.white,2,Qt.SolidLine))
+            qp.setPen(QPen(Qt.GlobalColor.white,2,Qt.PenStyle.SolidLine))
             qp.drawRect(700,80,200,200)
             qp.drawRect(700, 550, 200, 200)
-            qp.setRenderHint(QPainter.Antialiasing)
+            qp.setRenderHint(QPainter.RenderHint.Antialiasing)
 
             #steering wheel
-            qp.setPen(Qt.NoPen)
-            qp.setBrush(QBrush(Qt.gray))# QColor(0,138,255) Qt.white
+            qp.setPen(Qt.PenStyle.NoPen)
+            qp.setBrush(QBrush(Qt.GlobalColor.gray))# QColor(0,138,255) Qt.white
             qp.drawEllipse(QPoint(325, 635), 100, 100)
             qp.setBrush(QBrush(QColor(0, 138, 255)))
             qp.drawEllipse(QPoint(self.move_point[0], self.move_point[1]), 15, 15)
-            qp.setPen(QPen(QColor(0, 138, 255), 2, Qt.SolidLine))
+            qp.setPen(QPen(QColor(0, 138, 255), 2, Qt.PenStyle.SolidLine))
             x1 = round(math.sqrt(100**2-(self.move_point[1]-635)**2)+325)
             y1 = round(math.sqrt(100 ** 2 - (self.move_point[0] - 325) ** 2) + 635)
             qp.drawLine(x1, self.move_point[1], 650-x1, self.move_point[1])
@@ -233,8 +233,8 @@ class MyWindow(QMainWindow,Ui_client):
             print(e)
 
     def mouseMoveEvent(self, event):
-        x = event.pos().x()
-        y = event.pos().y()
+        x = event.position().toPoint().x()
+        y = event.position().toPoint().y()
         if x >= 700 and x <= 900:
             if y >= 80 and y <= 280:
                 try:
@@ -297,8 +297,8 @@ class MyWindow(QMainWindow,Ui_client):
             self.update()
 
     def mousePressEvent(self, event):
-        x = event.pos().x()
-        y = event.pos().y()
+        x = event.position().toPoint().x()
+        y = event.position().toPoint().y()
         if x >= 700 and x <= 900:
             if y >= 80 and y <= 280:
                 try:
@@ -359,8 +359,8 @@ class MyWindow(QMainWindow,Ui_client):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        x = event.pos().x()
-        y = event.pos().y()
+        x = event.position().toPoint().x()
+        y = event.position().toPoint().y()
         #print(x,y)
         if self.move_flag:
             self.move_point = [325, 635]
@@ -654,14 +654,14 @@ class MyWindow(QMainWindow,Ui_client):
         command = cmd.CMD_CALIBRATION + '\n'
         self.client.send_data(command)
         self.calibrationWindow=calibrationWindow(self.client)
-        self.calibrationWindow.setWindowModality(Qt.ApplicationModal)
+        self.calibrationWindow.setWindowModality(Qt.WindowModality.ApplicationModal)
         self.calibrationWindow.show()
 
     #LED
     def showLedWindow(self):
         try:
             self.ledWindow=ledWindow(self.client)
-            self.ledWindow.setWindowModality(Qt.ApplicationModal)
+            self.ledWindow.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.ledWindow.show()
         except Exception as e:
             print(e)
@@ -670,7 +670,7 @@ class MyWindow(QMainWindow,Ui_client):
     def showFaceWindow(self):
         try:
             self.faceWindow = faceWindow(self.client)
-            self.faceWindow.setWindowModality(Qt.ApplicationModal)
+            self.faceWindow.setWindowModality(Qt.WindowModality.ApplicationModal)
             self.faceWindow.show()
             self.client.fece_id = True
         except Exception as e:
@@ -681,7 +681,7 @@ class MyWindow(QMainWindow,Ui_client):
             height, width, bytesPerComponent=self.client.image.shape
             #print (height, width, bytesPerComponent)
             cv2.cvtColor(self.client.image, cv2.COLOR_BGR2RGB, self.client.image)
-            QImg = QImage(self.client.image.data.tobytes(), width, height, 3 * width, QImage.Format_RGB888)
+            QImg = QImage(self.client.image.data.tobytes(), width, height, 3 * width, QImage.Format.Format_RGB888)
             self.Video.setPixmap(QPixmap.fromImage(QImg))
             self.client.video_flag = True
 
@@ -719,7 +719,7 @@ class faceWindow(QMainWindow,Ui_Face):
                 if self.photoCount!=0:
                     self.Button_Read_Face.setText("Waiting ")
                     self.client.face.trainImage()
-                    QMessageBox.information(self, "Message", "success", QMessageBox.Yes)
+                    QMessageBox.information(self, "Message", "success", QMessageBox.StandardButton.Yes)
                 self.Button_Read_Face.setText("Read Face")
                 self.name = self.lineEdit.setText("")
                 self.photoCount == 0
@@ -733,7 +733,7 @@ class faceWindow(QMainWindow,Ui_Face):
                 self.timer2.stop()
                 self.Button_Read_Face.setText("Waiting ")
                 self.client.face.trainImage()
-                QMessageBox.information(self, "Message", "success", QMessageBox.Yes)
+                QMessageBox.information(self, "Message", "success", QMessageBox.StandardButton.Yes)
                 self.Button_Read_Face.setText("Read Face")
                 self.name = self.lineEdit.setText("")
             if len(self.face_image)>0:
@@ -741,7 +741,7 @@ class faceWindow(QMainWindow,Ui_Face):
                 if len(self.name) > 0:
 
                     height, width= self.face_image.shape[:2]
-                    QImg = QImage(self.face_image.data.tobytes(), width, height,3 * width,QImage.Format_RGB888)
+                    QImg = QImage(self.face_image.data.tobytes(), width, height,3 * width,QImage.Format.Format_RGB888)
                     self.label_photo.setPixmap(QPixmap.fromImage(QImg))
 
                     second=int(time.time() - self.timeout)
@@ -752,7 +752,7 @@ class faceWindow(QMainWindow,Ui_Face):
                         self.Button_Read_Face.setText("Reading "+str(1-second)+"S   "+str(self.photoCount)+"/30")
                     self.face_image=''
                 else:
-                    QMessageBox.information(self, "Message", "Please enter your name", QMessageBox.Yes)
+                    QMessageBox.information(self, "Message", "Please enter your name", QMessageBox.StandardButton.Yes)
                     self.timer2.stop()
                     self.Button_Read_Face.setText("Read Face")
         except Exception as e:
@@ -779,7 +779,7 @@ class faceWindow(QMainWindow,Ui_Face):
                 if self.client.video_flag == False:
                     height, width, bytesPerComponent = self.client.image.shape
                     cv2.cvtColor(self.client.image, cv2.COLOR_BGR2RGB, self.client.image)
-                    QImg = QImage(self.client.image.data.tobytes(), width, height, 3 * width, QImage.Format_RGB888)
+                    QImg = QImage(self.client.image.data.tobytes(), width, height, 3 * width, QImage.Format.Format_RGB888)
                     self.label_video.setPixmap(QPixmap.fromImage(QImg))
                     self.client.video_flag = True
         except Exception as e:
@@ -974,7 +974,7 @@ class calibrationWindow(QMainWindow,Ui_calibration):
         reply = QMessageBox.information(self,                        
                                         "Message",  
                                         "Saved successfully",  
-                                        QMessageBox.Yes)
+                                        QMessageBox.StandardButton.Yes)
         #print(command)
     def Read_from_txt(self,filename):
         file1 = open(filename + ".txt", "r")
@@ -1022,7 +1022,7 @@ class calibrationWindow(QMainWindow,Ui_calibration):
 class ColorDialog(QtWidgets.QColorDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setOptions(self.options() | QtWidgets.QColorDialog.DontUseNativeDialog)
+        self.setOptions(self.options() | QtWidgets.QColorDialog.ColorDialogOption.DontUseNativeDialog)
         for children in self.findChildren(QtWidgets.QWidget):
             classname = children.metaObject().className()
             if classname not in ("QColorPicker", "QColorLuminancePicker"):
@@ -1049,7 +1049,7 @@ class ledWindow(QMainWindow,Ui_led):
         self.colordialog = ColorDialog()
         self.colordialog.currentColorChanged.connect(self.onCurrentColorChanged)
         lay = QtWidgets.QVBoxLayout(self.widget)
-        lay.addWidget(self.colordialog, alignment=QtCore.Qt.AlignCenter)
+        lay.addWidget(self.colordialog, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
 
         self.pushButtonLightsOut.clicked.connect(self.lightsOut)
         self.radioButtonOne.setChecked(True)
@@ -1201,4 +1201,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     myshow=MyWindow()
     myshow.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
