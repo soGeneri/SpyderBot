@@ -94,7 +94,7 @@ class faceWindow(QMainWindow, Ui_Face):
 
         self.timer1 = QTimer(self)
         self.timer1.timeout.connect(self.faceDetection)
-        self.timer1.start(10)
+        self.timer1.start(150)
 
         self.timer2 = QTimer(self)
         self.timer2.timeout.connect(self.facePhoto)
@@ -170,11 +170,13 @@ class faceWindow(QMainWindow, Ui_Face):
     def faceDetection(self):
         try:
             if len(self.client.image) > 0:
-                gray = cv2.cvtColor(self.client.image, cv2.COLOR_BGR2GRAY)
-                faces = self.client.face.detector.detectMultiScale(gray, 1.2, 5)
+                small = cv2.resize(self.client.image, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_NEAREST)
+                gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
+                faces = self.client.face.detector.detectMultiScale(gray, 1.3, 4)
                 if len(faces) > 0:
-                    for (x, y, w, h) in faces:
-                        self.face_image = self.client.image[y - 5:y + h + 5, x - 5:x + w + 5]
+                    for (sx, sy, sw, sh) in faces:
+                        x, y, w, h = sx*2, sy*2, sw*2, sh*2
+                        self.face_image = self.client.image[max(0,y-5):y+h+5, max(0,x-5):x+w+5]
                         cv2.rectangle(self.client.image,
                                       (x - 20, y - 20), (x + w + 20, y + h + 20),
                                       (0, 255, 0), 2)

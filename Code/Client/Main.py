@@ -381,7 +381,7 @@ class MyWindow(QMainWindow, Ui_client):
     # ── Video & power ─────────────────────────────────────────────────────────
     def video(self):
         if self.Button_Video.text() == 'Open Video':
-            self.timer.start(10)
+            self.timer.start(33)
             self.Button_Video.setText('Close Video')
         else:
             self.timer.stop()

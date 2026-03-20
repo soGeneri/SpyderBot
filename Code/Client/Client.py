@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import io
 import math
-import copy
 import socket
 import struct
 import threading
@@ -9,8 +7,6 @@ from PID import *
 from Face import *
 import numpy as np
 from Thread import *
-import multiprocessing
-from PIL import Image, ImageDraw
 from Command import COMMAND as cmd
 class Client:
     def __init__(self):
@@ -33,17 +29,8 @@ class Client:
             self.client_socket1.close()
         except Exception as e:
             print(e)
-    def is_valid_image_4_bytes(self,buf): 
-        bValid = True
-        if buf[6:10] in (b'JFIF', b'Exif'):     
-            if not buf.rstrip(b'\0\r\n').endswith(b'\xff\xd9'):
-                bValid = False
-        else:        
-            try:  
-                Image.open(io.BytesIO(buf)).verify() 
-            except:  
-                bValid = False
-        return bValid
+    def is_valid_image_4_bytes(self,buf):
+        return len(buf) > 2 and buf[:2] == b'\xff\xd8' and buf[-2:] == b'\xff\xd9'
     def receiving_video(self,ip):
         try:
             self.client_socket.connect((ip, 8002))

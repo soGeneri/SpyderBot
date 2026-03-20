@@ -99,12 +99,9 @@ class Server:
             with output.condition:
                 output.condition.wait()
                 frame = output.frame
-            try:                
-                lenFrame = len(output.frame) 
-                #print("output .length:",lenFrame)
-                lengthBin = struct.pack('<I', lenFrame)
-                self.connection.write(lengthBin)
-                self.connection.write(frame)
+            try:
+                lengthBin = struct.pack('<I', len(frame))
+                self.connection.write(lengthBin + frame)
             except Exception as e:
                 camera.stop_recording()
                 camera.close()

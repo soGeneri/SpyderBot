@@ -31,6 +31,7 @@ class Control:
         self.calibration_angle=[[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]]
         self.angle=[[90,0,0],[90,0,0],[90,0,0],[90,0,0],[90,0,0],[90,0,0]]
         self.order=['','','','','','']
+        self.leg_lock = threading.RLock()
         # Pre-computed sin/cos for each leg's mounting angle (deg): 54,0,-54,-126,180,126
         _angles = [54, 0, -54, -126, 180, 126]
         self._leg_cos = [math.cos(a * math.pi / 180) for a in _angles]
@@ -109,32 +110,32 @@ class Control:
             self.calibration_angle[i][2]=self.calibration_angle[i][2]-self.angle[i][2]
     
     def setLegAngle(self):
-        if self.checkPoint():
-            for i in range(6):
-                self.angle[i][0],self.angle[i][1],self.angle[i][2]=self.coordinateToAngle(-self.leg_point[i][2],
-                                                                                          self.leg_point[i][0],
-                                                                                          self.leg_point[i][1])
-            for i in range(3):
-                self.angle[i][0]=self.restriction(self.angle[i][0]+self.calibration_angle[i][0],0,180)
-                self.angle[i][1]=self.restriction(90-(self.angle[i][1]+self.calibration_angle[i][1]),0,180)
-                self.angle[i][2]=self.restriction(self.angle[i][2]+self.calibration_angle[i][2],0,180)
-                self.angle[i+3][0]=self.restriction(self.angle[i+3][0]+self.calibration_angle[i+3][0],0,180)
-                self.angle[i+3][1]=self.restriction(90+self.angle[i+3][1]+self.calibration_angle[i+3][1],0,180)
-                self.angle[i+3][2]=self.restriction(180-(self.angle[i+3][2]+self.calibration_angle[i+3][2]),0,180)
-             
-            # Write all 18 servos in 4 batched I2C block writes instead of 72 individual writes
-            self.servo.setLegServoBatch(self.angle)
-        else:
-            print("This coordinate point is out of the active range")
+        with self.leg_lock:
+            if self.checkPoint():
+                for i in range(6):
+                    self.angle[i][0],self.angle[i][1],self.angle[i][2]=self.coordinateToAngle(-self.leg_point[i][2],
+                                                                                              self.leg_point[i][0],
+                                                                                              self.leg_point[i][1])
+                for i in range(3):
+                    self.angle[i][0]=self.restriction(self.angle[i][0]+self.calibration_angle[i][0],0,180)
+                    self.angle[i][1]=self.restriction(90-(self.angle[i][1]+self.calibration_angle[i][1]),0,180)
+                    self.angle[i][2]=self.restriction(self.angle[i][2]+self.calibration_angle[i][2],0,180)
+                    self.angle[i+3][0]=self.restriction(self.angle[i+3][0]+self.calibration_angle[i+3][0],0,180)
+                    self.angle[i+3][1]=self.restriction(90+self.angle[i+3][1]+self.calibration_angle[i+3][1],0,180)
+                    self.angle[i+3][2]=self.restriction(180-(self.angle[i+3][2]+self.calibration_angle[i+3][2]),0,180)
+
+                # Write all 18 servos in 4 batched I2C block writes instead of 72 individual writes
+                self.servo.setLegServoBatch(self.angle)
+            else:
+                print("This coordinate point is out of the active range")
     def checkPoint(self):
-        flag=True
-        leg_lenght=[0,0,0,0,0,0]  
+        min_sq = 8100   # 90²
+        max_sq = 61504  # 248²
         for i in range(6):
-          leg_lenght[i]=math.sqrt(self.leg_point[i][0]**2+self.leg_point[i][1]**2+self.leg_point[i][2]**2)
-        for i in range(6):
-          if leg_lenght[i] > 248 or leg_lenght[i] < 90:
-            flag=False
-        return flag
+            dist_sq = self.leg_point[i][0]**2 + self.leg_point[i][1]**2 + self.leg_point[i][2]**2
+            if dist_sq > max_sq or dist_sq < min_sq:
+                return False
+        return True
     def condition(self):
         while True:
             if (time.time()-self.timeout)>10 and  self.timeout!=0 and self.order[0]=='':
@@ -316,9 +317,11 @@ class Control:
         if angle!=0:
             x=0
         xy=[[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
+        c_angle = math.cos(angle * math.pi / 180)
+        s_angle = math.sin(angle * math.pi / 180)
         for i in range(6):
-            xy[i][0]=((point[i][0]*math.cos(angle/180*math.pi)+point[i][1]*math.sin(angle/180*math.pi)-point[i][0])+x)/F
-            xy[i][1]=((-point[i][0]*math.sin(angle/180*math.pi)+point[i][1]*math.cos(angle/180*math.pi)-point[i][1])+y)/F
+            xy[i][0]=((point[i][0]*c_angle+point[i][1]*s_angle-point[i][0])+x)/F
+            xy[i][1]=((-point[i][0]*s_angle+point[i][1]*c_angle-point[i][1])+y)/F
         if x == 0 and y == 0 and angle==0:
             self.coordinateTransformation(point)
             self.setLegAngle()
